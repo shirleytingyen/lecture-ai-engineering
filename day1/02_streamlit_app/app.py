@@ -128,15 +128,23 @@ def main():
         st.sidebar.info("開発者: 未入力")
 
     st.sidebar.header("モデル設定")
+    # セッション状態で選択されたモデルを管理
+    if "selected_model" not in st.session_state:
+        st.session_state.selected_model = MODEL_NAME
+
     model_name = st.sidebar.selectbox(
         "モデルを選択",
         options=list(AVAILABLE_MODELS.keys()),
-        format_func=lambda x: AVAILABLE_MODELS[x]
+        format_func=lambda x: AVAILABLE_MODELS[x],
+        index=list(AVAILABLE_MODELS.keys()).index(st.session_state.selected_model)
     )
+    # 選択されたモデルを更新
+    st.session_state.selected_model = model_name
+
     quantization = st.sidebar.selectbox(
         "量子化オプション",
         options=["none", "4bit", "8bit"],
-        index=1  # 預設啟用 4-bit 量子化
+        index=0  # 預設啟用 4-bit 量子化
     )
 
     with st.spinner(f"モデル '{model_name}' をロード中..."):
@@ -151,8 +159,11 @@ def main():
         label_visibility="collapsed"
     )
 
+    # モデルの表示名を取得
+    model_display_name = AVAILABLE_MODELS[st.session_state.selected_model]
+
     if page == "チャット":
-        display_chat_page(pipe)
+        display_chat_page(pipe, model_display_name)  # 傳遞 model_display_name
     elif page == "履歴":
         display_history_page()
     elif page == "データ管理":

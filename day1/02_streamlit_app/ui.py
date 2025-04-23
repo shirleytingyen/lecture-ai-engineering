@@ -299,9 +299,9 @@ from data import create_sample_evaluation_data
 from metrics import get_metrics_descriptions
 from config import MODEL_NAME, AVAILABLE_MODELS
 
-def display_chat_page(pipe):
+def display_chat_page(pipe, model_display_name):
     """チャットページのUIを表示"""
-    st.subheader(f"{AVAILABLE_MODELS[MODEL_NAME]} との対話")
+    st.subheader(f"{model_display_name} との対話")  # 動態使用傳遞的 model_display_name
     user_question = st.text_area("質問", key="question_input", height=100, value=st.session_state.get("current_question", ""))
     submit_button = st.button("質問を送信")
 
@@ -430,7 +430,7 @@ def display_metrics_analysis(history_df):
     accuracy_labels = {1.0: '正確', 0.5: '部分的に正確', 0.0: '不正確'}
     analysis_df['正確性'] = analysis_df['is_correct'].map(accuracy_labels)
     st.write("##### 正確性の分布")
-    accuracy_counts = analysis_df['正確性'].value_counts()  # Fixed typo: value dipl_counts -> value_counts
+    accuracy_counts = analysis_df['正確性'].value_counts()
     if not accuracy_counts.empty:
         st.bar_chart(accuracy_counts)
     else:
