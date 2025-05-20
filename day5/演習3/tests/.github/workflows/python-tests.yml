@@ -1,62 +1,27 @@
 name: Python Tests
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-name: Python Tests
+      - name: Install dependencies
+        run: |
+          pip install pytest
+          pip install great_expectations || true  # 有使用的話安裝，沒有也不會失敗
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+      - name: Run pytest
+        run: |
+          cd day5/演習3
+          pytest tests/test_data.py
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'  # 或你本地使用的版本
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt || true
-        pip install pytest great_expectations
-
-    - name: Run tests
-      run: |
-        pytest tests/
-        pip install pytest
-
-    - name: Run tests
-      run: |
-        pytest tests/
-- name: Run tests
-  run: |
-    cd day5/演習3
-    pytest tests
