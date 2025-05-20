@@ -24,13 +24,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r day5/requirements.txt
 
+    - name: Format check with black
+      run: black --check day5/演習3
+
     - name: Run pytest
-      run: |
-        cd day5/演習3/tests
-        pytest test_model.py -v
+      run: pytest day5/演習3/tests/test_model.py -v
 
     - name: Run code linting
       run: |
+        black --check day5/演習3/tests/test_model.py
+        flake8 day5/演習3/tests/test_model.py
+
         cd day5/演習3/tests
         black --check test_model.py
         flake8 test_model.py
