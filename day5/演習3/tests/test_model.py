@@ -18,13 +18,11 @@ MODEL_DIR = os.path.join(os.path.dirname(__file__), "../models")
 MODEL_PATH = os.path.join(MODEL_DIR, "titanic_model.pkl")
 BASELINE_MODEL_PATH = os.path.join(MODEL_DIR, "baseline_titanic_model.pkl")
 
-
 @pytest.fixture
 def sample_data():
     """テスト用データセットを読み込む"""
     if not os.path.exists(DATA_PATH):
         from sklearn.datasets import fetch_openml
-
         titanic = fetch_openml("titanic", version=1, as_frame=True)
         df = titanic.data
         df["Survived"] = titanic.target
@@ -39,15 +37,12 @@ def sample_data():
 
     return pd.read_csv(DATA_PATH)
 
-
 @pytest.fixture
 def preprocessor():
     """前処理パイプラインを定義"""
-    # 数値カラムと文字列カラムを定義
     numeric_features = ["Age", "Pclass", "SibSp", "Parch", "Fare"]
     categorical_features = ["Sex", "Embarked"]
 
-    # 数値特徴量の前処理（欠損値補完と標準化）
     numeric_transformer = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -55,7 +50,6 @@ def preprocessor():
         ]
     )
 
-    # カテゴリカル特徴量の前処理（欠損値補完とOne-hotエンコーディング）
     categorical_transformer = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="most_frequent")),
@@ -63,7 +57,6 @@ def preprocessor():
         ]
     )
 
-    # 前処理をまとめる
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", numeric_transformer, numeric_features),
@@ -73,18 +66,15 @@ def preprocessor():
 
     return preprocessor
 
-
 @pytest.fixture
 def train_model(sample_data, preprocessor):
-    """モデルの学習とテストデータの準備"""
-    # データの分割とラベル変換
+    """モデルを訓練し、テスト用データを準備"""
     X = sample_data.drop("Survived", axis=1)
     y = sample_data["Survived"].astype(int)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
 
-    # モデルパイプラインの作成
     model = Pipeline(
         steps=[
             ("preprocessor", preprocessor),
@@ -92,61 +82,49 @@ def train_model(sample_data, preprocessor):
         ]
     )
 
-    # モデルの学習
     model.fit(X_train, y_train)
 
     # モデルの保存
     os.makedirs(MODEL_DIR, exist_ok=True)
     with open(MODEL_PATH, "wb") as f:
         pickle.dump(model, f)
+    
+    # ベースラインモデルとしても保存
+    with open(BASELINE_MODEL_PATH, "wb") as f:
+        pickle.dump(model, f)
 
     return model, X_test, y_test
-
 
 def test_model_exists():
     """モデルファイルが存在するか確認"""
     if not os.path.exists(MODEL_PATH):
-        pytest.skip("モデルファイルが存在しないためスキップします")
+        pytest.skip("モデルファイルが存在しないため、テストをスキップします")
     assert os.path.exists(MODEL_PATH), "モデルファイルが存在しません"
-
 
 def test_model_accuracy(train_model):
     """モデルの精度を検証"""
     model, X_test, y_test = train_model
-
-    # 予測と精度計算
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-
-    # Titanicデータセットでは0.75以上の精度が一般的に良いとされる
-    assert accuracy >= 0.75, f"モデルの精度が低すぎます: {accuracy}"
-
+    assert accuracy >= 0.75, f"モデルの精度が低すぎます：{accuracy}"
 
 def test_model_inference_time(train_model):
     """モデルの推論時間を検証"""
     model, X_test, _ = train_model
-
-    # 推論時間の計測
     start_time = time.time()
     model.predict(X_test)
     end_time = time.time()
-
     inference_time = end_time - start_time
-
-    # 推論時間が1秒未満であることを確認
-    assert inference_time < 1.0, f"推論時間が長すぎます: {inference_time}秒"
-
+    assert inference_time < 1.0, f"推論時間が長すぎます：{inference_time}秒"
 
 def test_model_reproducibility(sample_data, preprocessor):
     """モデルの再現性を検証"""
-    # データの分割
     X = sample_data.drop("Survived", axis=1)
     y = sample_data["Survived"].astype(int)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
 
-    # 同じパラメータで２つのモデルを作成
     model1 = Pipeline(
         steps=[
             ("preprocessor", preprocessor),
@@ -161,44 +139,39 @@ def test_model_reproducibility(sample_data, preprocessor):
         ]
     )
 
-    # 学習
     model1.fit(X_train, y_train)
     model2.fit(X_train, y_train)
 
-    # 同じ予測結果になることを確認
     predictions1 = model1.predict(X_test)
     predictions2 = model2.predict(X_test)
 
-    assert np.array_equal(
-        predictions1, predictions2
-    ), "モデルの予測結果に再現性がありません"
-
+    assert np.array_equal(predictions1, predictions2), "モデルの予測結果に再現性がありません"
 
 def test_model_precision_recall(train_model):
-    """モデルの Precision と Recall を検証"""
+    """モデルのPrecisionとRecallを検証"""
     model, X_test, y_test = train_model
     y_pred = model.predict(X_test)
-
+    
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
-
-    assert precision >= 0.7, f"Precision {precision} が 0.7 に達していません"
-    assert recall >= 0.7, f"Recall {recall} が 0.7 に達していません"
-
+    
+    assert precision >= 0.7, f"Precision {precision} が0.7に達していません"
+    assert recall >= 0.7, f"Recall {recall} が0.7に達していません"
 
 def test_compare_with_baseline_model(train_model):
     """ベースラインモデルとの比較"""
     model, X_test, y_test = train_model
     current_metrics = accuracy_score(y_test, model.predict(X_test))
-
+    
     if not os.path.exists(BASELINE_MODEL_PATH):
         pytest.skip("ベースラインモデルのファイルが存在しないため、テストをスキップします")
-
+    
     with open(BASELINE_MODEL_PATH, "rb") as f:
         baseline_model = pickle.load(f)
-
+    
     baseline_metrics = accuracy_score(y_test, baseline_model.predict(X_test))
-
+    
     assert current_metrics >= baseline_metrics, (
         f"現在のモデルの精度 {current_metrics} はベースラインモデルの {baseline_metrics} よりも低いです"
     )
+
