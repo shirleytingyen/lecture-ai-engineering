@@ -26,7 +26,7 @@ jobs:
 
     - name: Run pytest
       run: |
-        cd day5/演習2
+        cd day5/演習3
         pytest test_model.py -v
 
     - name: Run code linting
