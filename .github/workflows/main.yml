@@ -38,3 +38,6 @@ jobs:
         cd day5/演習3/tests
         black --check test_model.py
         flake8 test_model.py
+        
+    - name: Run code linting with flake8
+      run: flake8 day5/演習3/tests/test_model.py
